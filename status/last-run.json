@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-10-16T01:59:32.443131Z",
+  "branches": 54,
+  "items": 18606,
+  "sizeKB": 2967,
+  "chains": {
+    "ppeum": {
+      "branches": 10,
+      "items": 1705,
+      "failed": [],
+      "reusedPrevious": false
+    },
+    "uni": {
+      "branches": 44,
+      "items": 37208,
+      "failed": [],
+      "reusedPrevious": false
+    }
+  },
+  "warnings": []
+}
