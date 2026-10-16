@@ -7,7 +7,8 @@ import 'package:meta/meta.dart';
 /// 수집하는 병원 체인.
 enum PriceChain {
   ppeum('예쁨주의쁨의원', '예쁨주의쁨'),
-  uni('유앤아이의원', '유앤아이');
+  uni('유앤아이의원', '유앤아이'),
+  velyb('블리비의원', '블리비');
 
   const PriceChain(this.label, this.shortLabel);
   final String label;

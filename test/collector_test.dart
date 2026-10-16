@@ -77,6 +77,57 @@ void main() {
     });
   });
 
+  group('블리비 홈페이지', () {
+    final html = fixture('velyb_board.html');
+
+    test('지점 탭에서 지점과 지역 (문 닫은 지점은 뺀다)', () async {
+      final branches = await const VelybSource().branches((_) async => html);
+      expect(branches.map((b) => (b.name, b.region)), [
+        ('강남역점', '서울'),
+        ('부산 서면점', '경상'),
+      ]);
+      expect(
+        branches.first.url,
+        contains('etc5=%EA%B0%95%EB%82%A8%EC%97%AD%EC%A0%90'),
+      );
+    });
+
+    test('이벤트 카드: 이벤트 이름·마감일·상품, 가격 없는 상품은 건너뛴다', () {
+      final items = const VelybSource().parse(
+        html,
+        const Branch(PriceChain.velyb, '강남역점', 'u'),
+      );
+      expect(
+        items.map(
+          (i) => (i.group, i.title, i.price, i.originalPrice, i.endsAt),
+        ),
+        [
+          (
+            '메가세일 페스타',
+            '♥️메가세일♥️온다 리프팅(고강도 극초단파) 10,000J 한정가',
+            23000,
+            45500,
+            DateTime(2026, 10, 17),
+          ),
+          ('부위별 필러', '필러(국산 아띠에르) 1cc 체험가', 49000, 99000, null),
+        ],
+      );
+    });
+
+    test('여러 쪽을 읽다가 새 상품이 없으면 멈춘다', () async {
+      final asked = <String>[];
+      final items = await const VelybSource().parseAllPages(
+        const Branch(PriceChain.velyb, '강남역점', 'u'),
+        (url) async {
+          asked.add(url);
+          return url.endsWith('p=1') ? html : '<html></html>';
+        },
+      );
+      expect(items, hasLength(2));
+      expect(asked, hasLength(2));
+    });
+  });
+
   test('같은 상품은 지점을 모아 하나로', () {
     final merged = mergeBranches([
       item('LDM 1회', 50000),

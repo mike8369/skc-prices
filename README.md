@@ -13,6 +13,7 @@
 |---|---|---|
 | 예쁨주의쁨 | `https://<지점>.ppeum.com/selectSurgery`의 `input[data-fir=event]` | `PpeumSource.subdomains` (지점 이름·지역 직접 관리) |
 | 유앤아이 | 지점 홈페이지 첫 화면의 `li.price_box` | 첫 화면 '유앤아이 네트워크' 메뉴의 `data-domain`, 지역은 메뉴의 '서울권' 같은 묶음 |
+| 블리비 | `m.velyb.kr/community/community01.php?tb=event_multi&etc5=<지점>&p=<쪽>`의 이벤트 카드 | 같은 화면의 지점 탭, 지역은 `VelybSource.regions` (직접 관리) |
 
 ## 직접 돌리기
 

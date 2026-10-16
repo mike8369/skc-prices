@@ -40,7 +40,12 @@ Future<void> main(List<String> args) async {
       stdout.writeln('${source.chain.label}: 지점 ${branches.length}곳');
       for (final branch in branches) {
         try {
-          final found = source.parse(await fetcher.get(branch.url), branch);
+          final found = source is VelybSource
+              ? await source.parseAllPages(branch, fetcher.get)
+              : source.parse(await fetcher.get(branch.url), branch);
+          if (branch.region == null) {
+            failed.add('${branch.name}: 지역을 모름 (sources.dart의 지역 표에 넣어 주세요)');
+          }
           stdout.writeln('  ${branch.name}: ${found.length}개');
           if (found.isEmpty) {
             failed.add('${branch.name}: 상품 0개 (홈페이지 구조가 바뀌었을 수 있음)');

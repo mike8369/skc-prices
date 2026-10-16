@@ -37,7 +37,10 @@ class PoliteFetcher {
     if (!wait.isNegative) await Future<void>.delayed(wait);
     _last = DateTime.now();
     final res = await (await _client.getUrl(uri)).close();
-    final body = await res.transform(utf8.decoder).join();
+    // 일부 병원 페이지에 깨진 글자가 섞여 있어서 그 글자만 건너뛴다.
+    final body = await res
+        .transform(const Utf8Decoder(allowMalformed: true))
+        .join();
     if (res.statusCode != 200) {
       throw HttpException('HTTP ${res.statusCode}', uri: uri);
     }
