@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스크크 이벤트 가격 데이터</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; line-height: 1.7; }
+  code { background: rgba(127,127,127,.15); padding: 2px 6px; border-radius: 6px; }
+  #status { color: gray; }
+</style>
+</head>
+<body>
+<h1>스크크 이벤트 가격 데이터</h1>
+<p>피부과 공식 홈페이지에 올라온 이벤트 가격을 매일 한 번 모은 공개 데이터예요. 스킨케어 기록 앱 <b>스크크</b>가 가격 비교에 씁니다.</p>
+<ul>
+  <li>데이터: <a href="prices.json"><code>prices.json</code></a></li>
+  <li>마지막 수집 결과: <a href="status.json"><code>status.json</code></a> <span id="status"></span></li>
+  <li>수집기 코드: <a href="https://github.com/mike8369/skc-prices">github.com/mike8369/skc-prices</a></li>
+</ul>
+<h2>원칙</h2>
+<ul>
+  <li>각 병원 <b>공식 홈페이지</b>에 공개된 상품 이름·가격·기간·지점만 모읍니다. 이미지와 설명 글은 가져오지 않습니다.</li>
+  <li>robots.txt를 지키고, 하루 한 번 요청 사이에 쉬면서 천천히 읽습니다.</li>
+  <li>병원에서 광고비나 수수료를 받지 않고, 예약을 중개하지 않습니다. 앱은 병원 홈페이지 링크만 보여줍니다.</li>
+  <li>참고용 정보이며 실제 가격과 조건은 병원에 확인해야 합니다.</li>
+</ul>
+<h2>병원 관계자께</h2>
+<p>수집에서 빼기를 원하시면 <a href="https://github.com/mike8369/skc-prices/issues">GitHub 이슈</a>로 알려 주세요. 바로 제외합니다.</p>
+<script>
+  fetch('status.json').then(r => r.json()).then(s => {
+    const d = new Date(s.generatedAt);
+    document.getElementById('status').textContent =
+      `— ${d.toLocaleString('ko-KR')} · 지점 ${s.branches}곳 · 상품 ${s.items}개`;
+  }).catch(() => {});
+</script>
+</body>
+</html>

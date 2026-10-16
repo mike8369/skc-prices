@@ -1,0 +1,7 @@
+.dart_tool/
+pubspec.lock
+/out/
+.DS_Store
+/site/prices.json
+/site/status.json
+/previous.json

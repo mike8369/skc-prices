@@ -1,0 +1,16 @@
+name: skc_prices
+description: 피부과 공식 홈페이지 이벤트 가격 수집기와 데이터 모양 (스크크 앱용).
+version: 0.1.0
+publish_to: none
+repository: https://github.com/mike8369/skc-prices
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  html: ^0.15.7
+  meta: ^1.16.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.0

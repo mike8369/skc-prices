@@ -1,0 +1,66 @@
+name: 이벤트 가격 수집
+
+on:
+  schedule:
+    - cron: '0 21 * * *' # 매일 06:00 (한국 시간)
+  workflow_dispatch: # Actions 탭에서 직접 실행
+
+permissions:
+  contents: write # status/last-run.json 커밋
+  pages: write
+  id-token: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart test
+
+      - name: 지난 수집본 받기 (실패한 체인을 채우는 데 쓴다)
+        run: curl -fsSL -o previous.json https://mike8369.github.io/skc-prices/prices.json || true
+
+      - name: 수집
+        id: collect
+        run: |
+          set +e
+          dart run bin/collect.dart --out site --previous previous.json
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          # 3: 일부 실패(지난 값으로 채워 저장함) → 배포는 하고 마지막에 실패로 알린다
+          if [ $code -ne 0 ] && [ $code -ne 3 ]; then exit $code; fi
+
+      - name: 수집 결과 기록 (매일 커밋해서 예약 실행이 멈추지 않게)
+        run: |
+          mkdir -p status
+          cp site/status.json status/last-run.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/last-run.json
+          git commit -m "수집 $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
+          git push
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: 일부 체인 실패 알림
+        if: steps.collect.outputs.code == '3'
+        run: |
+          echo "::warning::일부 병원 수집 실패 — status/last-run.json의 warnings 확인"
+          exit 1
