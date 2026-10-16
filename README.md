@@ -28,20 +28,24 @@ dart run bin/collect.dart --out out --only uni --max-branches 2   # 시험 수�
 홈페이지 구조가 바뀌면 그 체인이 0개로 나오고 `status.json`의 `warnings`에 남는다.
 `lib/src/sources.dart`를 고치고 `test/fixtures/`의 예시 HTML과 테스트를 함께 고친다.
 
-## 데이터 모양 (`prices.json`, version 1)
+## 데이터 모양 (`prices.json`, version 2)
+
+상품마다 이름과 지점 이름을 되풀이하지 않도록 문자열 표와 배열로 줄였다 (version 1보다 4배쯤 작다).
 
 ```jsonc
 {
-  "version": 1,
+  "version": 2,
   "generatedAt": "2026-10-16T21:00:00.000Z",
   "sources": [ { "chain": "uni", "branch": "강남점", "url": "https://www.uni114.co.kr/", "count": 418, "region": "서울" } ],
-  "items": [ { "chain": "uni", "title": "LDM 10회", "group": "LDM", "price": 400000, "originalPrice": 700000, "branches": ["강남점"] } ]
+  "strings": [ "LDM 10회", "LDM" ],
+  // [이름, 이벤트 이름(없으면 -1), 가격, 원래 가격(없으면 0), 마감 YYYYMMDD(없으면 0), 지점(sources 번호)…]
+  "items": [ [0, 1, 400000, 700000, 0, 0] ]
 }
 ```
 
-- `items`는 같은 체인에서 이름·가격이 같은 상품의 지점을 모은 것. `endsAt`(YYYY-MM-DD)은 홈페이지에 마감일이 있을 때만.
+- 같은 체인에서 이름·가격이 같은 상품은 지점을 모아 한 줄로 만든다.
 - 시술 분류·단위(샷/cc/회)·조건(첫 방문/체험가 등)은 넣지 않는다. 앱이 자기 시술 사전으로 읽는다.
-- 모양을 바꾸면 `PriceFeed.version`을 올린다 (앱은 모르는 버전을 무시한다).
+- 모양을 바꾸면 `PriceFeed.version`을 올린다. `PriceFeed.fromJson`은 1과 2를 모두 읽고, 모르는 체인의 지점은 건너뛴다.
 
 ## 지키는 것
 

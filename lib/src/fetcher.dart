@@ -29,7 +29,19 @@ class PoliteFetcher {
     if (disallowed.any((p) => p.isNotEmpty && uri.path.startsWith(p))) {
       throw StateError('robots.txt가 막은 주소: $url');
     }
-    return _download(uri);
+    return _withRetry(() => _download(uri));
+  }
+
+  /// 연결이 끊기는 일시적인 오류는 조금 쉬었다가 두 번까지 다시 해 본다.
+  Future<String> _withRetry(Future<String> Function() run) async {
+    for (var attempt = 1; ; attempt++) {
+      try {
+        return await run();
+      } on IOException {
+        if (attempt >= 3) rethrow;
+        await Future<void>.delayed(pause * (attempt * 5));
+      }
+    }
   }
 
   Future<String> _download(Uri uri) async {

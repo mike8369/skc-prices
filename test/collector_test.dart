@@ -150,6 +150,75 @@ void main() {
     expect(normalizeRegion('해외'), isNull);
   });
 
+  test('version 2: 이름·지점을 표로 줄여 저장하고 그대로 읽는다', () {
+    final feed = PriceFeed(
+      generatedAt: DateTime.utc(2026, 10, 16, 9),
+      sources: const [
+        PriceSource(
+          chain: PriceChain.uni,
+          branch: '강남점',
+          url: 'a',
+          count: 2,
+          region: '서울',
+        ),
+        PriceSource(
+          chain: PriceChain.velyb,
+          branch: '부산 서면점',
+          url: 'b',
+          count: 1,
+          region: '경상',
+        ),
+      ],
+      items: [
+        EventPrice(
+          chain: PriceChain.uni,
+          title: 'LDM 1회',
+          group: 'LDM',
+          price: 50000,
+          originalPrice: 80000,
+          branches: const ['강남점'],
+        ),
+        EventPrice(
+          chain: PriceChain.velyb,
+          title: 'LDM 1회',
+          price: 45000,
+          endsAt: DateTime(2026, 10, 31),
+          branches: const ['부산 서면점'],
+        ),
+      ],
+    );
+    final json = feed.toJson();
+    expect(json['version'], 2);
+    expect(json['strings'], ['LDM 1회', 'LDM']);
+    final back = PriceFeed.fromJson(jsonDecode(jsonEncode(json)))!;
+    expect(back.items.map((i) => i.key), feed.items.map((i) => i.key));
+    expect(back.items.last.endsAt, DateTime(2026, 10, 31));
+    expect(back.items.last.chain, PriceChain.velyb);
+    expect(back.items.first.originalPrice, 80000);
+  });
+
+  test('version 1 수집본도 읽는다', () {
+    final v1 = {
+      'version': 1,
+      'generatedAt': '2026-10-16T00:00:00.000Z',
+      'sources': [
+        {'chain': 'uni', 'branch': '강남점', 'url': 'a', 'count': 1},
+        {'chain': 'nope', 'branch': '어딘가', 'url': 'b', 'count': 1},
+      ],
+      'items': [
+        {
+          'chain': 'uni',
+          'title': 'LDM 1회',
+          'price': 50000,
+          'branches': ['강남점'],
+        },
+      ],
+    };
+    final feed = PriceFeed.fromJson(v1)!;
+    expect(feed.items.single.title, 'LDM 1회');
+    expect(feed.sources, hasLength(1), reason: '모르는 체인은 뺀다');
+  });
+
   test('JSON으로 저장하고 다시 읽는다', () {
     final feed = PriceFeed(
       generatedAt: DateTime.utc(2026, 10, 16, 9),

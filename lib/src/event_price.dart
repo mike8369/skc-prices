@@ -168,7 +168,8 @@ class PriceFeed {
     required this.items,
   });
 
-  static const version = 1;
+  /// 2: 문자열 표 + 배열로 줄인 모양 (1보다 4배쯤 작다). 1도 읽을 수 있다.
+  static const version = 2;
 
   final DateTime generatedAt;
   final List<PriceSource> sources;
@@ -204,31 +205,99 @@ class PriceFeed {
       if (sources.any((s) => s.region == r)) r,
   ];
 
-  Map<String, Object?> toJson() => {
-    'version': version,
-    'generatedAt': generatedAt.toIso8601String(),
-    'sources': [for (final s in sources) s.toJson()],
-    'items': [for (final i in items) i.toJson()],
-  };
+  /// version 2 모양:
+  /// ```
+  /// { "version": 2, "generatedAt": "…", "sources": [ {chain, branch, url, count, region} … ],
+  ///   "strings": [ 상품·이벤트 이름 … ],
+  ///   "items": [ [이름, 이벤트 이름(-1), 가격, 원래 가격(0), 마감 YYYYMMDD(0), 지점(sources 번호) …] … ] }
+  /// ```
+  /// 상품마다 이름과 지점 이름을 되풀이하지 않아서 작고 빨리 읽힌다.
+  Map<String, Object?> toJson() {
+    final strings = <String>[];
+    final stringIndex = <String, int>{};
+    int str(String s) => stringIndex.putIfAbsent(s, () {
+      strings.add(s);
+      return strings.length - 1;
+    });
+    final sourceIndex = {
+      for (final (i, s) in sources.indexed) '${s.chain.name}:${s.branch}': i,
+    };
+    return {
+      'version': version,
+      'generatedAt': generatedAt.toIso8601String(),
+      'sources': [for (final s in sources) s.toJson()],
+      'items': [
+        for (final i in items)
+          [
+            str(i.title),
+            i.group == null ? -1 : str(i.group!),
+            i.price,
+            i.originalPrice ?? 0,
+            i.endsAt == null
+                ? 0
+                : i.endsAt!.year * 10000 +
+                      i.endsAt!.month * 100 +
+                      i.endsAt!.day,
+            for (final b in i.branches) ?sourceIndex['${i.chain.name}:$b'],
+          ],
+      ],
+      'strings': strings,
+    };
+  }
 
   /// 모르는 버전이거나 깨진 내용이면 null.
   static PriceFeed? fromJson(Object? json) {
-    if (json is! Map<String, Object?> || json['version'] != version) {
-      return null;
-    }
+    if (json is! Map<String, Object?>) return null;
     final generated = DateTime.tryParse(json['generatedAt'] as String? ?? '');
     if (generated == null) return null;
-    return PriceFeed(
-      generatedAt: generated,
-      sources: [
-        for (final s in json['sources'] as List? ?? const [])
-          ?PriceSource.fromJson((s as Map).cast()),
-      ],
-      items: [
-        for (final i in json['items'] as List? ?? const [])
-          ?EventPrice.fromJson((i as Map).cast()),
-      ],
-    );
+    final rawSources = json['sources'] as List? ?? const [];
+    final sources = [
+      for (final s in rawSources) PriceSource.fromJson((s as Map).cast()),
+    ];
+
+    switch (json['version']) {
+      case 1:
+        return PriceFeed(
+          generatedAt: generated,
+          sources: [for (final s in sources) ?s],
+          items: [
+            for (final i in json['items'] as List? ?? const [])
+              ?EventPrice.fromJson((i as Map).cast()),
+          ],
+        );
+      case 2:
+        final strings = (json['strings'] as List).cast<String>();
+        final items = <EventPrice>[];
+        for (final raw in json['items'] as List) {
+          final row = raw as List;
+          // 모르는 체인(새 앱에서 추가된 병원)의 지점이면 건너뛴다.
+          final branches = [for (final b in row.skip(5)) ?sources[b as int]];
+          if (branches.isEmpty) continue;
+          final group = row[1] as int;
+          final original = row[3] as int;
+          final ends = row[4] as int;
+          items.add(
+            EventPrice(
+              chain: branches.first.chain,
+              title: strings[row[0] as int],
+              group: group < 0 ? null : strings[group],
+              price: row[2] as int,
+              originalPrice: original == 0 ? null : original,
+              endsAt: ends == 0
+                  ? null
+                  : DateTime(ends ~/ 10000, ends ~/ 100 % 100, ends % 100),
+              branches: [for (final b in branches) b.branch],
+            ),
+          );
+        }
+        return PriceFeed(
+          generatedAt: generated,
+          sources: [for (final s in sources) ?s],
+          items: items,
+        );
+      default:
+        return null;
+    }
   }
 }
 
