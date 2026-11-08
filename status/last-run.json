@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-11-07T00:46:02.591483Z",
+  "generatedAt": "2026-11-08T00:21:05.828852Z",
   "branches": 112,
-  "items": 61873,
-  "sizeKB": 3492,
+  "items": 61876,
+  "sizeKB": 3493,
   "chains": {
     "ppeum": {
       "branches": 10,
-      "items": 1260,
+      "items": 1272,
       "failed": [],
       "reusedPrevious": false
     },
@@ -18,7 +18,7 @@
     },
     "velyb": {
       "branches": 58,
-      "items": 54923,
+      "items": 54921,
       "failed": [],
       "reusedPrevious": false
     }
